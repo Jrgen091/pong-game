@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grumpy Barber Game</title>
+  <title>Grumpy Barber Game - Enhanced</title>
   <style>
     * {
       box-sizing: border-box;
@@ -15,16 +15,16 @@
       display: grid;
       place-items: center;
       background: linear-gradient(180deg, #2c1810, #1a0f08);
-      font-family: 'Arial', sans-serif;
+      font-family: 'Comic Sans MS', 'Arial Black', sans-serif;
       overflow: hidden;
     }
 
     .game-container {
-      background: #3d2817;
-      border: 4px solid #8b4513;
+      background: linear-gradient(135deg, #3d2817, #5c3d2e);
+      border: 6px solid #8b4513;
       border-radius: 20px;
       padding: 30px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.1);
       max-width: 1000px;
     }
 
@@ -32,8 +32,9 @@
       text-align: center;
       color: #fff;
       margin: 0 0 10px 0;
-      font-size: 32px;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      font-size: 40px;
+      text-shadow: 3px 3px 0 #000, 5px 5px 10px rgba(0, 0, 0, 0.7);
+      letter-spacing: 2px;
     }
 
     .info-bar {
@@ -41,32 +42,55 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
-      background: #2c1810;
-      padding: 15px 20px;
-      border-radius: 10px;
+      background: linear-gradient(135deg, #2c1810, #1a0f08);
+      padding: 20px;
+      border-radius: 15px;
+      border: 3px solid #8b4513;
       color: #fff;
       font-size: 18px;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
     }
 
     .stat {
       display: flex;
-      gap: 10px;
+      gap: 15px;
       align-items: center;
+      font-weight: bold;
     }
 
     .stat-value {
       color: #ffd700;
+      font-size: 28px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .timer {
+      font-size: 32px;
       font-weight: bold;
-      font-size: 24px;
+      color: #ff6b6b;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .timer.warning {
+      color: #ffff00;
+      animation: pulse 0.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     canvas {
       display: block;
-      background: #f5e6d3;
-      border: 4px solid #654321;
-      border-radius: 10px;
-      cursor: crosshair;
+      background: linear-gradient(180deg, #f5e6d3, #ede0d0);
+      border: 5px solid #654321;
+      border-radius: 15px;
+      cursor: none;
       margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2);
     }
 
     .controls {
@@ -74,130 +98,218 @@
       text-align: center;
       color: #fff;
       font-size: 16px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     }
 
     .game-over-screen {
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.95);
-      padding: 40px;
-      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.97), rgba(40, 20, 10, 0.97));
+      padding: 50px;
+      border-radius: 25px;
       text-align: center;
       z-index: 1000;
       display: none;
-      border: 4px solid #ffd700;
+      border: 6px solid #ffd700;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+      max-width: 600px;
     }
 
     .game-over-screen.show {
       display: block;
+      animation: popIn 0.5s ease-out;
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
     }
 
     .game-over-screen h2 {
       color: #ff6b6b;
-      font-size: 48px;
+      font-size: 56px;
       margin: 0 0 20px 0;
+      text-shadow: 3px 3px 0 #000;
+      animation: shake 0.5s;
+    }
+
+    .game-over-screen.win h2 {
+      color: #ffff00;
+      text-shadow: 3px 3px 0 #008800;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
     }
 
     .game-over-screen p {
       color: #fff;
-      font-size: 24px;
-      margin: 10px 0;
+      font-size: 22px;
+      margin: 15px 0;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .final-stats {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px 0;
+      border: 2px solid #ffd700;
+      font-size: 20px;
     }
 
     .game-over-screen button {
       margin-top: 30px;
-      padding: 15px 40px;
-      font-size: 20px;
-      background: #ff6b6b;
+      padding: 15px 50px;
+      font-size: 24px;
+      background: linear-gradient(135deg, #ff6b6b, #ff4444);
       color: #fff;
-      border: none;
-      border-radius: 10px;
+      border: 3px solid #000;
+      border-radius: 15px;
       cursor: pointer;
       font-weight: bold;
-      transition: background 0.3s;
+      transition: all 0.3s;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      font-family: 'Comic Sans MS', 'Arial Black', sans-serif;
     }
 
     .game-over-screen button:hover {
-      background: #ff5252;
+      background: linear-gradient(135deg, #ff5252, #ff3333);
+      transform: scale(1.1);
+    }
+
+    .game-over-screen.win button {
+      background: linear-gradient(135deg, #ffff00, #ffcc00);
+      color: #000;
+    }
+
+    .game-over-screen.win button:hover {
+      background: linear-gradient(135deg, #ffff66, #ffff00);
     }
 
     .funny-message {
-      position: absolute;
-      font-size: 28px;
+      position: fixed;
+      font-size: 36px;
       font-weight: bold;
       pointer-events: none;
       z-index: 100;
-      animation: fadeOut 2s forwards;
+      animation: floatAway 2.5s forwards;
+      text-shadow: 3px 3px 0 #000, 5px 5px 0 rgba(0, 0, 0, 0.5);
+      font-family: 'Comic Sans MS', 'Arial Black', sans-serif;
+      letter-spacing: 1px;
     }
 
-    @keyframes fadeOut {
+    @keyframes floatAway {
       0% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
       }
       100% {
         opacity: 0;
-        transform: translateY(-40px);
+        transform: translateY(-80px) scale(0.6) rotate(15deg);
       }
     }
 
     .blood-splat {
-      position: absolute;
+      position: fixed;
       pointer-events: none;
       z-index: 50;
-      animation: splat 1.5s forwards;
+      animation: splat 2s forwards;
+      filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.7));
     }
 
     @keyframes splat {
       0% {
         opacity: 1;
-        transform: scale(1);
+        transform: scale(1) rotate(0deg);
       }
       100% {
         opacity: 0;
-        transform: scale(0.5);
+        transform: scale(0.3) rotate(180deg);
       }
+    }
+
+    .blade-cursor {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      pointer-events: none;
+      z-index: 999;
+      display: none;
+    }
+
+    .blade-cursor.active {
+      display: block;
     }
   </style>
 </head>
 <body>
   <div class="game-container">
-    <h1>✂️ Grumpy Barber Game ✂️</h1>
+    <h1>✂️ GRUMPY BARBER SHOP ✂️</h1>
     <div class="info-bar">
       <div class="stat">
-        <span>Shaved:</span>
+        <span>📊 Shaved:</span>
         <span class="stat-value" id="shaved">0</span>
         <span>%</span>
       </div>
       <div class="stat">
-        <span>Cuts:</span>
+        <span>🩸 Cuts:</span>
         <span class="stat-value" id="cuts">0</span>
       </div>
       <div class="stat">
-        <span>Health:</span>
+        <span>❤️ Health:</span>
         <span class="stat-value" id="health">100</span>
         <span>%</span>
       </div>
+      <div class="timer" id="timer">⏱️ 2:00</div>
     </div>
     <canvas id="gameCanvas" width="900" height="600"></canvas>
     <div class="controls">
-      <p>🖱️ Click and drag to shave the beard! Be careful not to cut!</p>
+      <p>✂️ Click and drag to shave! The sharper the blade, the better! ✂️</p>
     </div>
   </div>
 
   <div class="game-over-screen" id="gameOverScreen">
-    <h2 id="gameOverTitle">OUCH!</h2>
+    <h2 id="gameOverTitle">YOU MONSTER!</h2>
     <p id="gameOverMessage">You've made too many cuts!</p>
-    <p id="finalStats"></p>
-    <button onclick="location.reload()">Play Again</button>
+    <div class="final-stats" id="finalStats"></div>
+    <button onclick="location.reload()">🔄 Try Again</button>
   </div>
+
+  <svg class="blade-cursor" id="bladeCursor" viewBox="0 0 60 60">
+    <!-- Blade handle -->
+    <rect x="20" y="35" width="20" height="20" fill="#8b4513" stroke="#000" stroke-width="1" rx="3"/>
+    <!-- Metal part -->
+    <rect x="18" y="30" width="24" height="8" fill="#c0c0c0" stroke="#000" stroke-width="1" rx="2"/>
+    <!-- Blade -->
+    <path d="M 30 20 L 28 30 L 32 30 Z" fill="#e8e8e8" stroke="#333" stroke-width="1.5"/>
+    <path d="M 30 20 L 28 30 L 32 30 Z" fill="url(#bladeGradient)" opacity="0.6"/>
+    <defs>
+      <linearGradient id="bladeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#808080;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+  </svg>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const gameOverScreen = document.getElementById('gameOverScreen');
+    const bladeCursor = document.getElementById('bladeCursor');
+
+    // Audio context for sound effects
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
     // Game state
     let gameState = {
@@ -205,13 +317,15 @@
       cuts: 0,
       health: 100,
       gameOver: false,
+      gameWon: false,
       mouseDown: false,
-      lastX: 0,
-      lastY: 0,
-      grumpiness: 0
+      mouseX: 0,
+      mouseY: 0,
+      timeLeft: 120,
+      startTime: Date.now()
     };
 
-    // Beard grid - represents areas that need shaving
+    // Beard grid
     const beardGrid = [];
     const gridSize = 8;
     const beardStartX = 280;
@@ -225,26 +339,43 @@
     const faceWidth = 700;
     const faceHeight = 500;
 
-    // Funny messages for cuts
+    // Exaggerated funny messages
     const cutMessages = [
-      'AU!',
-      'OW!',
-      'WHY?!',
-      'ARGH!',
-      'OOF!',
-      'GAH!',
-      'YIPE!',
-      'OUCH!!!',
-      'Why did I need\nthat shave today?!',
-      'This is torture!',
-      'STOP IT!',
-      'I HATE THIS!',
-      'WHAT WERE\nYOU THINKING?!',
-      'My poor face!',
-      'THIS WAS\nA MISTAKE!',
-      'Never again!',
-      'I should have\ngrown a beard!',
-      'OWWWWWW!'
+      'AU!!!',
+      'OOOOWWWW!!!',
+      'YIIIKES!!!',
+      'WHY?! WHY?!?!',
+      'STOP IT!!!',
+      'NOT THE FACE!!!',
+      'I HATE THIS SO MUCH!!!',
+      'This barber is INSANE!!!',
+      'Why did I come here?!',
+      'I should have grown\nA BEARD!!!',
+      'This is PURE TORTURE!!!',
+      'GET ME OUT OF HERE!!!',
+      'I AM NEVER COMING BACK!!!',
+      'MY BEAUTIFUL FACE!!!',
+      'CALL 911!!!',
+      'This is a NIGHTMARE!!!',
+      'You are the WORST barber!!!',
+      'I paid for THIS?!?!',
+      'AAAHHHHHHH!!!',
+      'My mother warned me!!!',
+      'BIG MISTAKE!!!',
+      'SOMEONE STOP THIS MANIAC!!!',
+      'OWWWWWWWWWW!!!',
+      'This day keeps getting worse!!!',
+      'I am SUFFERING!!!',
+    ];
+
+    const encouragingMessages = [
+      'EASY THERE!!!',
+      'STEADY HANDS!!!',
+      'BE CAREFUL!!!',
+      'Watch it!!!',
+      'Gentle!!!',
+      'I am BEGGING you!!!',
+      'Not too close!!!',
     ];
 
     // Initialize beard grid
@@ -261,24 +392,55 @@
       }
     }
 
-    // Draw the grumpy face
+    // Draw realistic cartoonish face
     function drawFace() {
-      // Face
+      // Face shadow
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetX = 5;
+      ctx.shadowOffsetY = 5;
+
+      // Face base
       ctx.fillStyle = '#f4a460';
       ctx.beginPath();
-      ctx.ellipse(faceX + faceWidth / 2, faceY + 150, 140, 180, 0, 0, Math.PI * 2);
+      ctx.ellipse(faceX + faceWidth / 2, faceY + 150, 150, 200, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#d4a574';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Face highlights
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(faceX + faceWidth / 2 - 60, faceY + 120, 50, 80, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
 
       // Ears
       ctx.fillStyle = '#d4a574';
       ctx.beginPath();
-      ctx.ellipse(faceX + 50, faceY + 180, 35, 55, 0, 0, Math.PI * 2);
+      ctx.ellipse(faceX + 40, faceY + 180, 40, 65, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#b8956d';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(faceX + faceWidth - 40, faceY + 180, 40, 65, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Inner ear
+      ctx.fillStyle = '#c99878';
+      ctx.beginPath();
+      ctx.ellipse(faceX + 40, faceY + 180, 20, 35, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(faceX + faceWidth - 50, faceY + 180, 35, 55, 0, 0, Math.PI * 2);
+      ctx.ellipse(faceX + faceWidth - 40, faceY + 180, 20, 35, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Eyes - extra grumpy
+      // Eyes - VERY grumpy and angry
       const eyeY = faceY + 140;
       const eyeL = faceX + 220;
       const eyeR = faceX + 480;
@@ -286,64 +448,106 @@
       // Left eye
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.ellipse(eyeL, eyeY, 22, 25, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(eyeL, eyeY, 28, 35, -0.4, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.arc(eyeL + 5, eyeY + 2, 12, 0, Math.PI * 2);
+      ctx.arc(eyeL + 8, eyeY + 4, 15, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(eyeL + 7, eyeY, 4, 0, Math.PI * 2);
+      ctx.arc(eyeL + 10, eyeY + 2, 6, 0, Math.PI * 2);
       ctx.fill();
 
       // Right eye
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.ellipse(eyeR, eyeY, 22, 25, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(eyeR, eyeY, 28, 35, 0.4, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.arc(eyeR - 5, eyeY + 2, 12, 0, Math.PI * 2);
+      ctx.arc(eyeR - 8, eyeY + 4, 15, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(eyeR - 7, eyeY, 4, 0, Math.PI * 2);
+      ctx.arc(eyeR - 10, eyeY + 2, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      // Angry eyebrows
+      // ANGRY eyebrows - thick and menacing
       ctx.strokeStyle = '#000';
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 7;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(eyeL - 25, eyeY - 35);
-      ctx.lineTo(eyeL + 25, eyeY - 30);
+      ctx.moveTo(eyeL - 35, eyeY - 40);
+      ctx.lineTo(eyeL + 30, eyeY - 28);
       ctx.stroke();
+
       ctx.beginPath();
-      ctx.moveTo(eyeR - 25, eyeY - 30);
-      ctx.lineTo(eyeR + 25, eyeY - 35);
+      ctx.moveTo(eyeR - 30, eyeY - 28);
+      ctx.lineTo(eyeR + 35, eyeY - 40);
       ctx.stroke();
 
       // Nose
       ctx.fillStyle = '#d4a574';
       ctx.beginPath();
       ctx.moveTo(faceX + faceWidth / 2, faceY + 200);
-      ctx.lineTo(faceX + faceWidth / 2 - 20, faceY + 260);
-      ctx.lineTo(faceX + faceWidth / 2 + 20, faceY + 260);
+      ctx.lineTo(faceX + faceWidth / 2 - 25, faceY + 280);
+      ctx.lineTo(faceX + faceWidth / 2 + 25, faceY + 280);
+      ctx.fill();
+      ctx.strokeStyle = '#b8956d';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Nostrils
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(faceX + faceWidth / 2 - 15, faceY + 275, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(faceX + faceWidth / 2 + 15, faceY + 275, 4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Mouth - angry frown
+      // Mouth - ANGRY FROWN
       ctx.strokeStyle = '#000';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 5;
       ctx.beginPath();
-      ctx.arc(faceX + faceWidth / 2, faceY + 320, 50, 0, Math.PI);
+      ctx.arc(faceX + faceWidth / 2, faceY + 350, 60, Math.PI * 0.2, Math.PI * 0.8);
       ctx.stroke();
+
+      // Mouth fill
+      ctx.fillStyle = '#8b4444';
+      ctx.beginPath();
+      ctx.arc(faceX + faceWidth / 2, faceY + 350, 60, Math.PI * 0.2, Math.PI * 0.8);
+      ctx.lineTo(faceX + faceWidth / 2 + 60, faceY + 350);
+      ctx.fill();
 
       // Neck
       ctx.fillStyle = '#d4a574';
-      ctx.fillRect(faceX + faceWidth / 2 - 50, faceY + faceHeight - 60, 100, 80);
+      ctx.fillRect(faceX + faceWidth / 2 - 60, faceY + faceHeight - 60, 120, 90);
+      ctx.strokeStyle = '#b8956d';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(faceX + faceWidth / 2 - 60, faceY + faceHeight - 60, 120, 90);
+
+      // Neck lines
+      ctx.strokeStyle = '#c99878';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(faceX + faceWidth / 2 - 60, faceY + faceHeight - 60 + i * 20);
+        ctx.lineTo(faceX + faceWidth / 2 + 60, faceY + faceHeight - 60 + i * 20);
+        ctx.stroke();
+      }
     }
 
-    // Draw beard (areas to shave)
+    // Draw beard with more realistic texture
     function drawBeard() {
       for (let y = 0; y < beardGrid.length; y++) {
         for (let x = 0; x < beardGrid[y].length; x++) {
@@ -352,19 +556,34 @@
           const pixelY = beardStartY + y * gridSize;
 
           if (!cell.shaved) {
-            // Draw beard
-            ctx.fillStyle = '#2c2c2c';
+            // Draw beard with gradient effect
+            const gradient = ctx.createLinearGradient(pixelX, pixelY, pixelX + gridSize, pixelY + gridSize);
+            gradient.addColorStop(0, '#1a1a1a');
+            gradient.addColorStop(1, '#3a3a3a');
+
+            ctx.fillStyle = gradient;
             ctx.fillRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
 
-            // Add some texture
-            if ((x + y) % 2 === 0) {
-              ctx.fillStyle = '#1a1a1a';
-              ctx.fillRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
+            // Beard texture
+            if ((x + y) % 3 === 0) {
+              ctx.fillStyle = '#0d0d0d';
+              ctx.fillRect(pixelX + 2, pixelY + 2, gridSize - 5, gridSize - 5);
             }
           } else if (cell.bleeding) {
-            // Draw blood
-            ctx.fillStyle = '#ff3333';
+            // Draw blood with dripping effect
+            ctx.fillStyle = '#ff2222';
             ctx.fillRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
+
+            // Dark red outline
+            ctx.strokeStyle = '#cc0000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
+
+            // Blood drip
+            if (Math.random() < 0.3) {
+              ctx.fillStyle = 'rgba(255, 34, 34, 0.7)';
+              ctx.fillRect(pixelX, pixelY + gridSize, gridSize - 1, 3);
+            }
           }
         }
       }
@@ -372,7 +591,8 @@
 
     // Update beard grid based on cursor movement
     function shaveBeard(x, y) {
-      const brushSize = 35;
+      const brushSize = 40;
+      let anyCut = false;
 
       for (let i = 0; i < beardGrid.length; i++) {
         for (let j = 0; j < beardGrid[i].length; j++) {
@@ -383,70 +603,115 @@
 
           if (dist < brushSize) {
             if (!beardGrid[i][j].shaved) {
-              // 80% chance to shave, 20% chance to cut
-              if (Math.random() < 0.8) {
+              // 75% chance to shave cleanly, 25% chance to cut
+              if (Math.random() < 0.75) {
                 beardGrid[i][j].shaved = true;
                 gameState.shaved += 1;
               } else {
                 // CUT!
                 beardGrid[i][j].shaved = true;
                 beardGrid[i][j].bleeding = true;
-                beardGrid[i][j].bleedTime = 1;
+                beardGrid[i][j].bleedTime = 1.5;
                 gameState.cuts++;
-                gameState.health -= 15;
-                gameState.grumpiness += 20;
+                gameState.health -= 12;
+                anyCut = true;
 
-                // Show funny message
-                showFunnyMessage(x, y);
+                // Show funny cut message
+                showFunnyMessage(x, y, true);
 
                 // Show blood splat
                 showBloodSplat(x, y);
 
-                // Play sound (visual feedback)
-                createOuchSound();
+                // Play cut sound
+                playCutSound();
               }
             }
           }
         }
       }
 
+      if (!anyCut && Math.random() < 0.05) {
+        showFunnyMessage(gameState.mouseX, gameState.mouseY, false);
+      }
+
       updateStats();
 
       if (gameState.health <= 0) {
-        endGame();
+        endGame(false);
       }
     }
 
-    function showFunnyMessage(x, y) {
-      const message = cutMessages[Math.floor(Math.random() * cutMessages.length)];
+    function showFunnyMessage(x, y, isCut) {
+      const messages = isCut ? cutMessages : encouragingMessages;
+      const message = messages[Math.floor(Math.random() * messages.length)];
       const div = document.createElement('div');
       div.className = 'funny-message';
       div.textContent = message;
       div.style.left = x + 'px';
       div.style.top = y + 'px';
-      div.style.color = '#ff3333';
-      div.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
-      document.body.appendChild(div);
 
-      setTimeout(() => div.remove(), 2000);
+      if (isCut) {
+        div.style.color = '#ff3333';
+        div.style.fontSize = '40px';
+      } else {
+        div.style.color = '#ff9900';
+        div.style.fontSize = '32px';
+      }
+
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 2500);
     }
 
     function showBloodSplat(x, y) {
+      const splats = ['●', '●●', '✕', '✦'];
       const splat = document.createElement('div');
       splat.className = 'blood-splat';
-      splat.innerHTML = '●';
+      splat.innerHTML = splats[Math.floor(Math.random() * splats.length)];
       splat.style.left = x + 'px';
       splat.style.top = y + 'px';
       splat.style.color = '#ff3333';
-      splat.style.fontSize = '30px';
+      splat.style.fontSize = '40px';
       document.body.appendChild(splat);
 
-      setTimeout(() => splat.remove(), 1500);
+      setTimeout(() => splat.remove(), 2000);
     }
 
-    function createOuchSound() {
-      // Visual feedback for "ou" sound
-      gameState.grumpiness = Math.min(100, gameState.grumpiness);
+    // Sound effects using Web Audio API
+    function playCutSound() {
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+
+    function playWarningSound() {
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.setValueAtTime(750, now + 0.1);
+
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.setValueAtTime(0.2, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+      osc.start(now);
+      osc.stop(now + 0.2);
     }
 
     function updateStats() {
@@ -459,8 +724,37 @@
       document.getElementById('health').textContent = Math.max(0, gameState.health);
     }
 
-    function endGame() {
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+      gameState.timeLeft = Math.max(0, 120 - elapsed);
+
+      const minutes = Math.floor(gameState.timeLeft / 60);
+      const seconds = gameState.timeLeft % 60;
+      const timeStr = `⏱️ ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+      const timerEl = document.getElementById('timer');
+      timerEl.textContent = timeStr;
+
+      if (gameState.timeLeft <= 10) {
+        timerEl.classList.add('warning');
+        if (gameState.timeLeft === 10) playWarningSound();
+      }
+
+      if (gameState.timeLeft <= 0 && !gameState.gameOver) {
+        const totalCells = beardGrid.length * beardGrid[0].length;
+        const percentage = Math.round((gameState.shaved / totalCells) * 100);
+        if (percentage >= 80 && gameState.cuts <= 3) {
+          endGame(true);
+        } else {
+          endGame(false);
+        }
+      }
+    }
+
+    function endGame(won) {
       gameState.gameOver = true;
+      gameState.gameWon = won;
+
       const totalCells = beardGrid.length * beardGrid[0].length;
       const shavedCells = gameState.shaved;
       const percentage = Math.round((shavedCells / totalCells) * 100);
@@ -469,23 +763,108 @@
       const gameOverMessage = document.getElementById('gameOverMessage');
       const finalStats = document.getElementById('finalStats');
 
-      gameOverTitle.textContent = 'YOU MONSTER!';
-      gameOverMessage.textContent = `You made ${gameState.cuts} cuts on a customer's face!`;
-      finalStats.textContent = `Shaved: ${percentage}% | Final Health: ${Math.max(0, gameState.health)}%`;
+      gameOverScreen.classList.remove('win');
+
+      if (won) {
+        gameOverScreen.classList.add('win');
+        gameOverTitle.textContent = '🎉 YOU DID IT! 🎉';
+        gameOverMessage.textContent = 'The customer survived your terrible work!';
+        finalStats.innerHTML = `
+          <p>✓ Shaved: ${percentage}%</p>
+          <p>✓ Cuts Made: ${gameState.cuts}</p>
+          <p>✓ Customer Health: ${Math.max(0, gameState.health)}%</p>
+          <p style="color: #ffff00; font-size: 24px; margin-top: 15px;">SOMEHOW HE'S STILL ALIVE!</p>
+        `;
+        playVictorySound();
+      } else {
+        gameOverTitle.textContent = 'GAME OVER!';
+        if (gameState.health <= 0) {
+          gameOverMessage.textContent = '😫 You butchered the poor fellow!';
+        } else {
+          gameOverMessage.textContent = '⏰ Time\'s up! You didn\'t finish!';
+        }
+        finalStats.innerHTML = `
+          <p>Shaved: ${percentage}%</p>
+          <p>Cuts Made: ${gameState.cuts}</p>
+          <p>Final Health: ${Math.max(0, gameState.health)}%</p>
+          <p style="color: #ff6b6b; font-size: 20px; margin-top: 15px;">That was HORRIBLE!</p>
+        `;
+      }
 
       gameOverScreen.classList.add('show');
     }
 
-    function draw() {
+    function playVictorySound() {
+      const now = audioContext.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C, E, G, C
+
+      notes.forEach((freq, index) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+
+        osc.frequency.setValueAtTime(freq, now + index * 0.1);
+        gain.gain.setValueAtTime(0.2, now + index * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.1 + 0.3);
+
+        osc.start(now + index * 0.1);
+        osc.stop(now + index * 0.1 + 0.3);
+      });
+    }
+
+    // Mouse events
+    canvas.addEventListener('mousedown', (e) => {
+      if (gameState.gameOver) return;
+      gameState.mouseDown = true;
+      const rect = canvas.getBoundingClientRect();
+      gameState.mouseX = e.clientX - rect.left;
+      gameState.mouseY = e.clientY - rect.top;
+      playCutSound();
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      gameState.mouseX = e.clientX - rect.left;
+      gameState.mouseY = e.clientY - rect.top;
+
+      // Update blade cursor position
+      bladeCursor.style.left = (gameState.mouseX - 30) + 'px';
+      bladeCursor.style.top = (gameState.mouseY - 30) + 'px';
+
+      if (gameState.mouseDown && !gameState.gameOver) {
+        shaveBeard(gameState.mouseX, gameState.mouseY);
+      }
+    });
+
+    canvas.addEventListener('mouseenter', () => {
+      bladeCursor.classList.add('active');
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      bladeCursor.classList.remove('active');
+      gameState.mouseDown = false;
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      gameState.mouseDown = false;
+    });
+
+    // Game loop
+    function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Background
       ctx.fillStyle = '#f5e6d3';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw chair back
+      // Barber chair back
       ctx.fillStyle = '#8b4513';
-      ctx.fillRect(0, 0, canvas.width, 100);
+      ctx.fillRect(0, 0, canvas.width, 80);
+
+      ctx.fillStyle = '#a0522d';
+      ctx.fillRect(canvas.width - 120, 0, 120, 200);
 
       // Draw face and beard
       drawFace();
@@ -502,41 +881,9 @@
           }
         }
       }
-    }
 
-    // Mouse events
-    canvas.addEventListener('mousedown', (e) => {
-      if (gameState.gameOver) return;
-      gameState.mouseDown = true;
-      const rect = canvas.getBoundingClientRect();
-      gameState.lastX = e.clientX - rect.left;
-      gameState.lastY = e.clientY - rect.top;
-    });
+      updateTimer();
 
-    canvas.addEventListener('mousemove', (e) => {
-      if (!gameState.mouseDown || gameState.gameOver) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      shaveBeard(x, y);
-
-      gameState.lastX = x;
-      gameState.lastY = y;
-    });
-
-    canvas.addEventListener('mouseup', () => {
-      gameState.mouseDown = false;
-    });
-
-    canvas.addEventListener('mouseleave', () => {
-      gameState.mouseDown = false;
-    });
-
-    // Game loop
-    function gameLoop() {
-      draw();
       if (!gameState.gameOver) {
         requestAnimationFrame(gameLoop);
       }
