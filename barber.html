@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grumpy Barber Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #2c1810, #1a0f08);
+      font-family: 'Arial', sans-serif;
+      overflow: hidden;
+    }
+
+    .game-container {
+      background: #3d2817;
+      border: 4px solid #8b4513;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      max-width: 1000px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #fff;
+      margin: 0 0 10px 0;
+      font-size: 32px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .info-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #2c1810;
+      padding: 15px 20px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 18px;
+    }
+
+    .stat {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .stat-value {
+      color: #ffd700;
+      font-weight: bold;
+      font-size: 24px;
+    }
+
+    canvas {
+      display: block;
+      background: #f5e6d3;
+      border: 4px solid #654321;
+      border-radius: 10px;
+      cursor: crosshair;
+      margin: 0 auto;
+    }
+
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .game-over-screen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      z-index: 1000;
+      display: none;
+      border: 4px solid #ffd700;
+    }
+
+    .game-over-screen.show {
+      display: block;
+    }
+
+    .game-over-screen h2 {
+      color: #ff6b6b;
+      font-size: 48px;
+      margin: 0 0 20px 0;
+    }
+
+    .game-over-screen p {
+      color: #fff;
+      font-size: 24px;
+      margin: 10px 0;
+    }
+
+    .game-over-screen button {
+      margin-top: 30px;
+      padding: 15px 40px;
+      font-size: 20px;
+      background: #ff6b6b;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .game-over-screen button:hover {
+      background: #ff5252;
+    }
+
+    .funny-message {
+      position: absolute;
+      font-size: 28px;
+      font-weight: bold;
+      pointer-events: none;
+      z-index: 100;
+      animation: fadeOut 2s forwards;
+    }
+
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-40px);
+      }
+    }
+
+    .blood-splat {
+      position: absolute;
+      pointer-events: none;
+      z-index: 50;
+      animation: splat 1.5s forwards;
+    }
+
+    @keyframes splat {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>✂️ Grumpy Barber Game ✂️</h1>
+    <div class="info-bar">
+      <div class="stat">
+        <span>Shaved:</span>
+        <span class="stat-value" id="shaved">0</span>
+        <span>%</span>
+      </div>
+      <div class="stat">
+        <span>Cuts:</span>
+        <span class="stat-value" id="cuts">0</span>
+      </div>
+      <div class="stat">
+        <span>Health:</span>
+        <span class="stat-value" id="health">100</span>
+        <span>%</span>
+      </div>
+    </div>
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+    <div class="controls">
+      <p>🖱️ Click and drag to shave the beard! Be careful not to cut!</p>
+    </div>
+  </div>
+
+  <div class="game-over-screen" id="gameOverScreen">
+    <h2 id="gameOverTitle">OUCH!</h2>
+    <p id="gameOverMessage">You've made too many cuts!</p>
+    <p id="finalStats"></p>
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+
+    // Game state
+    let gameState = {
+      shaved: 0,
+      cuts: 0,
+      health: 100,
+      gameOver: false,
+      mouseDown: false,
+      lastX: 0,
+      lastY: 0,
+      grumpiness: 0
+    };
+
+    // Beard grid - represents areas that need shaving
+    const beardGrid = [];
+    const gridSize = 8;
+    const beardStartX = 280;
+    const beardStartY = 150;
+    const beardWidth = 340;
+    const beardHeight = 280;
+
+    // Face position
+    const faceX = 100;
+    const faceY = 50;
+    const faceWidth = 700;
+    const faceHeight = 500;
+
+    // Funny messages for cuts
+    const cutMessages = [
+      'AU!',
+      'OW!',
+      'WHY?!',
+      'ARGH!',
+      'OOF!',
+      'GAH!',
+      'YIPE!',
+      'OUCH!!!',
+      'Why did I need\nthat shave today?!',
+      'This is torture!',
+      'STOP IT!',
+      'I HATE THIS!',
+      'WHAT WERE\nYOU THINKING?!',
+      'My poor face!',
+      'THIS WAS\nA MISTAKE!',
+      'Never again!',
+      'I should have\ngrown a beard!',
+      'OWWWWWW!'
+    ];
+
+    // Initialize beard grid
+    function initBeardGrid() {
+      for (let y = 0; y < Math.ceil(beardHeight / gridSize); y++) {
+        beardGrid[y] = [];
+        for (let x = 0; x < Math.ceil(beardWidth / gridSize); x++) {
+          beardGrid[y][x] = {
+            shaved: false,
+            bleeding: false,
+            bleedTime: 0
+          };
+        }
+      }
+    }
+
+    // Draw the grumpy face
+    function drawFace() {
+      // Face
+      ctx.fillStyle = '#f4a460';
+      ctx.beginPath();
+      ctx.ellipse(faceX + faceWidth / 2, faceY + 150, 140, 180, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ears
+      ctx.fillStyle = '#d4a574';
+      ctx.beginPath();
+      ctx.ellipse(faceX + 50, faceY + 180, 35, 55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(faceX + faceWidth - 50, faceY + 180, 35, 55, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes - extra grumpy
+      const eyeY = faceY + 140;
+      const eyeL = faceX + 220;
+      const eyeR = faceX + 480;
+
+      // Left eye
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(eyeL, eyeY, 22, 25, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(eyeL + 5, eyeY + 2, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(eyeL + 7, eyeY, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Right eye
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(eyeR, eyeY, 22, 25, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(eyeR - 5, eyeY + 2, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(eyeR - 7, eyeY, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Angry eyebrows
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(eyeL - 25, eyeY - 35);
+      ctx.lineTo(eyeL + 25, eyeY - 30);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(eyeR - 25, eyeY - 30);
+      ctx.lineTo(eyeR + 25, eyeY - 35);
+      ctx.stroke();
+
+      // Nose
+      ctx.fillStyle = '#d4a574';
+      ctx.beginPath();
+      ctx.moveTo(faceX + faceWidth / 2, faceY + 200);
+      ctx.lineTo(faceX + faceWidth / 2 - 20, faceY + 260);
+      ctx.lineTo(faceX + faceWidth / 2 + 20, faceY + 260);
+      ctx.fill();
+
+      // Mouth - angry frown
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(faceX + faceWidth / 2, faceY + 320, 50, 0, Math.PI);
+      ctx.stroke();
+
+      // Neck
+      ctx.fillStyle = '#d4a574';
+      ctx.fillRect(faceX + faceWidth / 2 - 50, faceY + faceHeight - 60, 100, 80);
+    }
+
+    // Draw beard (areas to shave)
+    function drawBeard() {
+      for (let y = 0; y < beardGrid.length; y++) {
+        for (let x = 0; x < beardGrid[y].length; x++) {
+          const cell = beardGrid[y][x];
+          const pixelX = beardStartX + x * gridSize;
+          const pixelY = beardStartY + y * gridSize;
+
+          if (!cell.shaved) {
+            // Draw beard
+            ctx.fillStyle = '#2c2c2c';
+            ctx.fillRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
+
+            // Add some texture
+            if ((x + y) % 2 === 0) {
+              ctx.fillStyle = '#1a1a1a';
+              ctx.fillRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
+            }
+          } else if (cell.bleeding) {
+            // Draw blood
+            ctx.fillStyle = '#ff3333';
+            ctx.fillRect(pixelX, pixelY, gridSize - 1, gridSize - 1);
+          }
+        }
+      }
+    }
+
+    // Update beard grid based on cursor movement
+    function shaveBeard(x, y) {
+      const brushSize = 35;
+
+      for (let i = 0; i < beardGrid.length; i++) {
+        for (let j = 0; j < beardGrid[i].length; j++) {
+          const pixelX = beardStartX + j * gridSize + gridSize / 2;
+          const pixelY = beardStartY + i * gridSize + gridSize / 2;
+
+          const dist = Math.hypot(x - pixelX, y - pixelY);
+
+          if (dist < brushSize) {
+            if (!beardGrid[i][j].shaved) {
+              // 80% chance to shave, 20% chance to cut
+              if (Math.random() < 0.8) {
+                beardGrid[i][j].shaved = true;
+                gameState.shaved += 1;
+              } else {
+                // CUT!
+                beardGrid[i][j].shaved = true;
+                beardGrid[i][j].bleeding = true;
+                beardGrid[i][j].bleedTime = 1;
+                gameState.cuts++;
+                gameState.health -= 15;
+                gameState.grumpiness += 20;
+
+                // Show funny message
+                showFunnyMessage(x, y);
+
+                // Show blood splat
+                showBloodSplat(x, y);
+
+                // Play sound (visual feedback)
+                createOuchSound();
+              }
+            }
+          }
+        }
+      }
+
+      updateStats();
+
+      if (gameState.health <= 0) {
+        endGame();
+      }
+    }
+
+    function showFunnyMessage(x, y) {
+      const message = cutMessages[Math.floor(Math.random() * cutMessages.length)];
+      const div = document.createElement('div');
+      div.className = 'funny-message';
+      div.textContent = message;
+      div.style.left = x + 'px';
+      div.style.top = y + 'px';
+      div.style.color = '#ff3333';
+      div.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
+      document.body.appendChild(div);
+
+      setTimeout(() => div.remove(), 2000);
+    }
+
+    function showBloodSplat(x, y) {
+      const splat = document.createElement('div');
+      splat.className = 'blood-splat';
+      splat.innerHTML = '●';
+      splat.style.left = x + 'px';
+      splat.style.top = y + 'px';
+      splat.style.color = '#ff3333';
+      splat.style.fontSize = '30px';
+      document.body.appendChild(splat);
+
+      setTimeout(() => splat.remove(), 1500);
+    }
+
+    function createOuchSound() {
+      // Visual feedback for "ou" sound
+      gameState.grumpiness = Math.min(100, gameState.grumpiness);
+    }
+
+    function updateStats() {
+      const totalCells = beardGrid.length * beardGrid[0].length;
+      const shavedCells = gameState.shaved;
+      const percentage = Math.round((shavedCells / totalCells) * 100);
+
+      document.getElementById('shaved').textContent = percentage;
+      document.getElementById('cuts').textContent = gameState.cuts;
+      document.getElementById('health').textContent = Math.max(0, gameState.health);
+    }
+
+    function endGame() {
+      gameState.gameOver = true;
+      const totalCells = beardGrid.length * beardGrid[0].length;
+      const shavedCells = gameState.shaved;
+      const percentage = Math.round((shavedCells / totalCells) * 100);
+
+      const gameOverTitle = document.getElementById('gameOverTitle');
+      const gameOverMessage = document.getElementById('gameOverMessage');
+      const finalStats = document.getElementById('finalStats');
+
+      gameOverTitle.textContent = 'YOU MONSTER!';
+      gameOverMessage.textContent = `You made ${gameState.cuts} cuts on a customer's face!`;
+      finalStats.textContent = `Shaved: ${percentage}% | Final Health: ${Math.max(0, gameState.health)}%`;
+
+      gameOverScreen.classList.add('show');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background
+      ctx.fillStyle = '#f5e6d3';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw chair back
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(0, 0, canvas.width, 100);
+
+      // Draw face and beard
+      drawFace();
+      drawBeard();
+
+      // Update bleeding cells
+      for (let i = 0; i < beardGrid.length; i++) {
+        for (let j = 0; j < beardGrid[i].length; j++) {
+          if (beardGrid[i][j].bleeding) {
+            beardGrid[i][j].bleedTime -= 0.016;
+            if (beardGrid[i][j].bleedTime <= 0) {
+              beardGrid[i][j].bleeding = false;
+            }
+          }
+        }
+      }
+    }
+
+    // Mouse events
+    canvas.addEventListener('mousedown', (e) => {
+      if (gameState.gameOver) return;
+      gameState.mouseDown = true;
+      const rect = canvas.getBoundingClientRect();
+      gameState.lastX = e.clientX - rect.left;
+      gameState.lastY = e.clientY - rect.top;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!gameState.mouseDown || gameState.gameOver) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      shaveBeard(x, y);
+
+      gameState.lastX = x;
+      gameState.lastY = y;
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      gameState.mouseDown = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      gameState.mouseDown = false;
+    });
+
+    // Game loop
+    function gameLoop() {
+      draw();
+      if (!gameState.gameOver) {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // Initialize and start
+    initBeardGrid();
+    updateStats();
+    gameLoop();
+  </script>
+</body>
+</html>
